@@ -160,12 +160,14 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
 
         var command = List.of("/bin/bash");
 
-        var override = "--override=false";
+        var override = "--override=${KC_REALM_OVERRIDE}";
 
         var runBuild = (keycloak.getSpec().getImage() == null) ? "/opt/keycloak/bin/kc.sh build && " : "";
 
         var commandArgs = List.of("-c",
-                runBuild + "/opt/keycloak/bin/kc.sh import --file='" + importMntPath + getRealmName() + "-realm.json' " + override);
+                runBuild + "/opt/keycloak/bin/kc.sh import --file='" + importMntPath + getRealmName() + "-realm.json' " + override
+                + " && x=$(echo $?) && curl -fsI -X POST http://localhost:15020/quitquitquit > /dev/null 2>&1; "
+                + "date \"+%Y-%m-%d %T,%3N INFO [org/keycloak/operator/controllers/KeycloakRealmImportJob] Job execution finished. Envoy Proxy terminated\"; exit $x");
 
         keycloakContainer
                 .setCommand(command);
